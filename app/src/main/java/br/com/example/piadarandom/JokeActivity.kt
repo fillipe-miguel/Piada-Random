@@ -7,9 +7,12 @@ import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import br.com.example.piadarandom.model.Joke
 import br.com.example.piadarandom.util.JokeTask
+import java.io.IOException
 
 class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 
@@ -21,7 +24,6 @@ class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_joke)
 
-
 		val toolbar: Toolbar = findViewById(R.id.joke_toolbar)
 		setSupportActionBar(toolbar)
 		supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_baseline_keyboard_arrow_left_24)
@@ -32,14 +34,11 @@ class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 		tvAnswer = findViewById(R.id.tv_answer)
 		progressBar = findViewById(R.id.progress_circular)
 
-
-		JokeTask(this).execute("https://api-charadas.herokuapp.com/puzzle?lang=ptbr")
-
+		callConnection()
 
 		btnMakeAnother.setOnClickListener {
 			progressBar.visibility = View.VISIBLE
-			JokeTask(this).execute("https://api-charadas.herokuapp.com/puzzle?lang=ptbr")
-
+			callConnection()
 		}
 
 	}
@@ -57,4 +56,23 @@ class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 		tvAnswer.text = joke.answer
 		progressBar.visibility = View.GONE
 	}
+
+	override fun onError(error: IOException) {
+		progressBar.visibility = View.GONE
+		AlertDialog.Builder(this@JokeActivity).apply {
+			setTitle("Connection Error!")
+			setMessage(error.message)
+			setPositiveButton("Retry") { _, _ ->
+				progressBar.visibility = View.VISIBLE
+				callConnection()
+			}
+			setNegativeButton("Cancel"){_,_ -> finish()}
+			create()
+		}.show()
+	}
+
+	private fun callConnection(){
+		JokeTask(this).execute("https://api-charadas.herokuapp.com/puzzle?lang=ptbr")
+	}
+
 }

@@ -2,9 +2,11 @@ package br.com.example.piadarandom.util
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import br.com.example.piadarandom.model.Joke
 import org.json.JSONObject
 import java.io.IOException
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
@@ -13,9 +15,11 @@ class JokeTask(private val callback: Callback) {
 
 	private val handler = Handler(Looper.getMainLooper())
 	private val executor = Executors.newSingleThreadExecutor()
+	private lateinit var stream: InputStream
 
 	interface Callback{
 		fun onResult(joke: Joke)
+		fun onError(error: IOException)
 	}
 
 	fun execute(url: String){
@@ -25,17 +29,19 @@ class JokeTask(private val callback: Callback) {
 
 					val requestUrl = URL(url)
 					val urlConnection = requestUrl.openConnection() as HttpURLConnection
+
 					urlConnection.apply {
 						readTimeout = 2000
-						connectTimeout = 2000
+						connectTimeout = 4000
 					}
 
 					val statusCode: Int = urlConnection.responseCode
+
 					if(statusCode > 400){
-						throw IOException("Erro de conexão")
+						throw IOException("Connection Error")
 					}
 
-					val stream = urlConnection.inputStream
+					stream = urlConnection.inputStream
 					val jsonAsString = stream.bufferedReader().use { it.readText() }
 
 					val joke = toJoke(jsonAsString)
@@ -45,7 +51,11 @@ class JokeTask(private val callback: Callback) {
 					}
 
 				}catch (e: IOException){
-
+					handler.post {
+						callback.onError(e)
+					}
+				}finally {
+					stream.close()
 				}
 		}
 	}
