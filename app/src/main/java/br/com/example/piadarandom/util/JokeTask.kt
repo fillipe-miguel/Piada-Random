@@ -17,50 +17,50 @@ class JokeTask(private val callback: Callback) {
 	private val executor = Executors.newSingleThreadExecutor()
 	private lateinit var stream: InputStream
 
-	interface Callback{
+	interface Callback {
 		fun onResult(joke: Joke)
 		fun onError(error: IOException)
 	}
 
-	fun execute(url: String){
+	fun execute(url: String) {
 
-		executor.execute{
-				try {
+		executor.execute {
+			try {
 
-					val requestUrl = URL(url)
-					val urlConnection = requestUrl.openConnection() as HttpURLConnection
+				val requestUrl = URL(url)
+				val urlConnection = requestUrl.openConnection() as HttpURLConnection
 
-					urlConnection.apply {
-						readTimeout = 2000
-						connectTimeout = 4000
-					}
-
-					val statusCode: Int = urlConnection.responseCode
-
-					if(statusCode > 400){
-						throw IOException("Connection Error")
-					}
-
-					stream = urlConnection.inputStream
-					val jsonAsString = stream.bufferedReader().use { it.readText() }
-
-					val joke = toJoke(jsonAsString)
-
-					handler.post {
-						callback.onResult(joke)
-					}
-
-				}catch (e: IOException){
-					handler.post {
-						callback.onError(e)
-					}
-				}finally {
-					stream.close()
+				urlConnection.apply {
+					readTimeout = 2000
+					connectTimeout = 4000
 				}
+
+				val statusCode: Int = urlConnection.responseCode
+
+				stream = urlConnection.inputStream
+				val jsonAsString = stream.bufferedReader().use { it.readText() }
+
+				if (statusCode > 400) {
+					throw IOException("Connection Error")
+				}
+
+				val joke = toJoke(jsonAsString)
+
+				handler.post {
+					callback.onResult(joke)
+				}
+
+			} catch (e: IOException) {
+				handler.post {
+					callback.onError(e)
+				}
+			} finally {
+				stream.close()
+			}
 		}
 	}
 
-	private fun toJoke(jsonString: String): Joke{
+	private fun toJoke(jsonString: String): Joke {
 
 		val jsonRoot = JSONObject(jsonString)
 

@@ -19,6 +19,7 @@ class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 	private lateinit var tvQuestion: TextView
 	private lateinit var tvAnswer: TextView
 	private lateinit var progressBar: ProgressBar
+	private lateinit var btnMakeOther: Button
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -29,15 +30,15 @@ class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 		supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_baseline_keyboard_arrow_left_24)
 		supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-		val btnMakeAnother: Button = findViewById(R.id.btn_makeJoke)
+		btnMakeOther = findViewById(R.id.btn_makeJoke)
 		tvQuestion = findViewById(R.id.tv_question)
 		tvAnswer = findViewById(R.id.tv_answer)
 		progressBar = findViewById(R.id.progress_circular)
 
+		btnMakeOther.visibility = View.GONE
 		callConnection()
 
-		btnMakeAnother.setOnClickListener {
-			progressBar.visibility = View.VISIBLE
+		btnMakeOther.setOnClickListener {
 			callConnection()
 		}
 
@@ -55,6 +56,10 @@ class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 		tvQuestion.text = joke.question
 		tvAnswer.text = joke.answer
 		progressBar.visibility = View.GONE
+
+		if (btnMakeOther.visibility == View.GONE){
+			btnMakeOther.visibility = View.VISIBLE
+		}
 	}
 
 	override fun onError(error: IOException) {
@@ -63,7 +68,6 @@ class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 			setTitle("Connection Error!")
 			setMessage(error.message)
 			setPositiveButton("Retry") { _, _ ->
-				progressBar.visibility = View.VISIBLE
 				callConnection()
 			}
 			setNegativeButton("Cancel"){_,_ -> finish()}
@@ -72,6 +76,7 @@ class JokeActivity : AppCompatActivity(), JokeTask.Callback {
 	}
 
 	private fun callConnection(){
+		progressBar.visibility = View.VISIBLE
 		JokeTask(this).execute("https://api-charadas.herokuapp.com/puzzle?lang=ptbr")
 	}
 
